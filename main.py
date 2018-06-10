@@ -11,8 +11,8 @@ x_train, x_test, y_train, y_test = cross_validation.train_test_split(x_train, y_
 FR = fr.FRModel()
 FR.create_model()
 
-FR.train(x_train,y_train, 100, 1,40,1000)
-
+#FR.train(x_train,y_train, 100, 1,40,100)
+FR.valid(x_test,y_test)
 # # create triplet pair data
 #
 # def create_pairs(x, digit_indices, num_classes):
