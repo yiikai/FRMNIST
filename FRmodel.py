@@ -44,6 +44,7 @@ class FRModel:
 
         self.logits = tf.concat([out_a, out_p, out_n], axis=1)
         self.loss = self.__triplet_loss(self.logits, alpha=0.2)
+        tf.summary.scalar("Cost loss",self.loss)
         optimizer = tf.train.AdamOptimizer(1e-3)
         global_step = tf.train.get_global_step()
         self.train_op = optimizer.minimize(self.loss, global_step=global_step)
@@ -103,7 +104,6 @@ class FRModel:
         :param num_classes: 类别
         :return: Triplet Loss 的 Feed 数据
         """
-
         pairs = []
         n = min([len(digit_indices[d]) for d in range(num_classes)]) - 1  # 最小类别数
         print("mini size is :", n)
@@ -119,6 +119,8 @@ class FRModel:
     def train(self, x, y, batch_size, anchor=1, postive=40, epochs=100, model_dir='./checkpoint/model', save=False):
         saver = tf.train.Saver()
         with tf.Session() as sess:
+            merged = tf.summary.merge_all()
+            train_writer = tf.summary.FileWriter('./train',sess.graph)
             sess.run(tf.global_variables_initializer())
             tf.train.write_graph(sess.graph_def, model_dir, name="FRMNIST.pbtxt")
             saver.save(sess, model_dir, global_step=100, write_meta_graph=False)
@@ -126,11 +128,12 @@ class FRModel:
                 pairs = self.batch_hard(batch_size=batch_size, x=x, y=y, anchorsize=anchor, postivesize=postive)
                 op, cost = sess.run([self.train_op, self.loss],
                                     feed_dict={self.input_a: pairs[:, 0],
-                                               self.input_a: pairs[:, 1],
+                                               self.input_p: pairs[:, 1],
                                                self.input_n: pairs[:, 2]})
                 print("cost is ", sess.run(tf.reduce_mean(cost)))
+            train_writer.close()
 
-    def valid(self, x, y):
+    def valid_test(self, x, y):
         saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
